@@ -224,9 +224,9 @@ tests = testGroup "Test.Cardano.Api.Typed.CBOR"
   , testPropertyNamed "roundtrip script SimpleScriptV2 CBOR"                 "roundtrip script SimpleScriptV2 CBOR"                 prop_roundtrip_script_SimpleScriptV2_CBOR
   , testPropertyNamed "roundtrip script PlutusScriptV1 CBOR"                 "roundtrip script PlutusScriptV1 CBOR"                 prop_roundtrip_script_PlutusScriptV1_CBOR
   , testPropertyNamed "roundtrip script PlutusScriptV2 CBOR"                 "roundtrip script PlutusScriptV2 CBOR"                 prop_roundtrip_script_PlutusScriptV2_CBOR
-  , testPropertyNamed "roundtrip UpdateProposal CBOR"                        "roundtrip UpdateProposal CBOR"                        prop_roundtrip_UpdateProposal_CBOR
   , testPropertyNamed "roundtrip ScriptData CBOR"                            "roundtrip ScriptData CBOR"                            prop_roundtrip_ScriptData_CBOR
   , testPropertyNamed "roundtrip tx CBOR"                                    "roundtrip tx CBOR"                                    prop_roundtrip_tx_CBOR
+  , testPropertyNamed "roundtrip UpdateProposal"                             "roundtrip UpdateProposal"                             prop_roundtrip_UpdateProposal_CBOR
   , testGroup "roundtrip txbody Cddl"     test_roundtrip_txbody_Cddl
   , testGroup "roundtrip Tx Cddl"         test_roundtrip_Tx_Cddl
   , testGroup "roundtrip TxWitness Cddl"  test_roundtrip_TxWitness_Cddl
