@@ -23,6 +23,7 @@ import qualified Data.Aeson as Aeson
 import           Data.Aeson.Types (ToJSONKey (..), toJSONKeyText)
 import           Data.BiMap (BiMap (..), Bimap)
 import qualified Data.ByteString.Base16 as B16
+import qualified Data.ByteString.Base16 as Base16
 import qualified Data.ByteString.Short as Short
 import qualified Data.Map.Strict as Map
 import           Data.Text (Text)
@@ -61,15 +62,19 @@ import qualified Cardano.Ledger.Mary.Value as Mary
 import qualified Cardano.Ledger.PoolDistr as Ledger
 import qualified Cardano.Ledger.SafeHash as SafeHash
 import           Cardano.Ledger.Shelley.API (MIRPot (..), ShelleyTxOut (..))
+import qualified Cardano.Ledger.Shelley.API as Ledger (KeyRole (..), WitVKey)
 import qualified Cardano.Ledger.Shelley.API as Shelley
 import           Cardano.Ledger.Val (Val)
 
+import           Cardano.Api.SerialiseCBOR (ToCBOR (..))
+import           Cardano.Binary (encodeListLen, serializeEncoding')
 import           Cardano.Ledger.Babbage.TxBody (BabbageTxOut (..))
 import qualified Cardano.Ledger.Shelley.EpochBoundary as ShelleyEpoch
 import qualified Cardano.Ledger.Shelley.LedgerState as ShelleyLedger
 import           Cardano.Ledger.Shelley.PParams (ShelleyPParamsUpdate)
 import qualified Cardano.Ledger.Shelley.Rewards as Shelley
 import qualified Cardano.Ledger.Shelley.RewardUpdate as Shelley
+import           Codec.CBOR.Encoding (encodeWord)
 import qualified Ouroboros.Consensus.Shelley.Eras as Consensus
 import qualified Ouroboros.Consensus.Shelley.Ledger.Query as Consensus
 
@@ -730,3 +735,8 @@ instance ToJSON MIRPot where
     case pot of
       ReservesMIR -> "reserves"
       TreasuryMIR -> "treasury"
+
+instance Crypto.Crypto crypto => ToJSON (Ledger.WitVKey 'Ledger.Witness crypto) where
+  toJSON = toJSON . Text.decodeLatin1 . Base16.encode . serializeEncoding' . prefixWithTag
+   where
+    prefixWithTag wit = encodeListLen 2 <> encodeWord 0 <> toCBOR wit
