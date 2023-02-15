@@ -777,11 +777,13 @@ module Cardano.Api (
     renderQueryConvenienceError,
 
     -- ** Oops-enabled queries
+    queryStateForBalancedTx_,
     queryUtxo_,
     queryProtocolParams_,
     queryEraHistory_,
     queryStakePools_,
     querySystemStart_,
+    handleQueryConvenienceErrors_,
 
     -- ** Constraint satisfaction functions
     getIsCardanoEraConstraint,
