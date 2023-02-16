@@ -115,6 +115,8 @@ liftTmplRun Summary{sumGenerator=GeneratorProfile{..}
          (False, _)                       -> WValue
          (True, "loop")                   -> WPlutusLoopCountdown
          (True, "schnorr-secp256k1-loop") -> WPlutusLoopSECP
+         (True, _)
+           | plutusAutoMode == Just True  -> WPlutusLoopCountdown     -- cardano-ops profile.json does not include the script file path
          (_, scr) ->
            error $ "Unknown Plutus script:  " <> scr
   }

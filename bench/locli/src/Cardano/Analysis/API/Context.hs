@@ -52,6 +52,7 @@ data GeneratorProfile
   , tps              :: Double
   , tx_count         :: Word64
   , plutusMode       :: Maybe Bool
+  , plutusAutoMode   :: Maybe Bool
   , plutusLoopScript :: Maybe FilePath
   }
   deriving (Generic, Show, FromJSON, ToJSON)
