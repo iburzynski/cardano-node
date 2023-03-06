@@ -52,6 +52,7 @@ library
                       , random
                       , resourcet
                       , safe-exceptions
+                      , scientific
                       , stm
                       , tasty
                       , tasty-expected-failure
