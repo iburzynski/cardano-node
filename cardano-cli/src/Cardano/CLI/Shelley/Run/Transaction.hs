@@ -269,11 +269,11 @@ renderFeature TxFeatureReturnCollateral     = "Return collateral"
 runTransactionCmd :: TransactionCmd -> ExceptT ShelleyTxCmdError IO ()
 runTransactionCmd cmd =
   case cmd of
-    TxBuild era consensusModeParams nid mScriptValidity mOverrideWits txins readOnlyRefIns
+    TxBuild mNodeSocketPath era consensusModeParams nid mScriptValidity mOverrideWits txins readOnlyRefIns
             reqSigners txinsc mReturnColl mTotCollateral txouts changeAddr mValue mLowBound
             mUpperBound certs wdrls metadataSchema scriptFiles metadataFiles mPparams
             mUpProp outputOptions -> do
-      runTxBuildCmd era consensusModeParams nid mScriptValidity mOverrideWits txins readOnlyRefIns
+      runTxBuildCmd mNodeSocketPath era consensusModeParams nid mScriptValidity mOverrideWits txins readOnlyRefIns
             reqSigners txinsc mReturnColl mTotCollateral txouts changeAddr mValue mLowBound
             mUpperBound certs wdrls metadataSchema scriptFiles metadataFiles mPparams
             mUpProp outputOptions
@@ -285,8 +285,8 @@ runTransactionCmd cmd =
                metadataSchema scriptFiles metadataFiles mpparams mUpProp out
     TxSign txinfile skfiles network txoutfile ->
       runTxSign txinfile skfiles network txoutfile
-    TxSubmit anyConsensusModeParams network txFp ->
-      runTxSubmit anyConsensusModeParams network txFp
+    TxSubmit mNodeSocketPath anyConsensusModeParams network txFp ->
+      runTxSubmit mNodeSocketPath anyConsensusModeParams network txFp
     TxCalculateMinFee txbody mnw pGenesisOrParamsFile nInputs nOutputs
                       nShelleyKeyWitnesses nByronKeyWitnesses ->
       runTxCalculateMinFee txbody mnw pGenesisOrParamsFile nInputs nOutputs
@@ -306,7 +306,8 @@ runTransactionCmd cmd =
 --
 
 runTxBuildCmd
-  :: AnyCardanoEra
+  :: Maybe SocketPath
+  -> AnyCardanoEra
   -> AnyConsensusModeParams
   -> NetworkId
   -> Maybe ScriptValidity
@@ -332,19 +333,22 @@ runTxBuildCmd
   -> TxBuildOutputOptions
   -> ExceptT ShelleyTxCmdError IO ()
 runTxBuildCmd
-  (AnyCardanoEra cEra) consensusModeParams@(AnyConsensusModeParams cModeParams) nid mScriptValidity mOverrideWits txins readOnlyRefIns
-  reqSigners txinsc mReturnColl mTotCollateral txouts changeAddr mValue mLowBound
-  mUpperBound certs wdrls metadataSchema scriptFiles metadataFiles mPparams mUpProp outputOptions = do
+    mNodeSocketPath (AnyCardanoEra cEra)
+    consensusModeParams@(AnyConsensusModeParams cModeParams)
+    nid mScriptValidity mOverrideWits txins readOnlyRefIns
+    reqSigners txinsc mReturnColl mTotCollateral txouts changeAddr mValue mLowBound
+    mUpperBound certs wdrls metadataSchema scriptFiles metadataFiles mPparams mUpProp outputOptions = do
   -- The user can specify an era prior to the era that the node is currently in.
   -- We cannot use the user specified era to construct a query against a node because it may differ
   -- from the node's era and this will result in the 'QueryEraMismatch' failure.
 
-  SocketPath sockPath <- lift readEnvSocketPath & onLeft (left . ShelleyTxCmdSocketEnvError)
+  socketPath <- maybe (lift readEnvSocketPath) (pure . Right) mNodeSocketPath
+    & onLeft (left . ShelleyTxCmdSocketEnvError)
 
   let localNodeConnInfo = LocalNodeConnectInfo
                             { localConsensusModeParams = cModeParams
                             , localNodeNetworkId = nid
-                            , localNodeSocketPath = sockPath
+                            , localNodeSocketPath = unSocketPath socketPath
                             }
 
   AnyCardanoEra nodeEra <- lift (determineEra cModeParams localNodeConnInfo)
@@ -379,11 +383,12 @@ runTxBuildCmd
   let filteredTxinsc = Set.toList $ Set.fromList txinsc
 
   -- We need to construct the txBodycontent outside of runTxBuild
-  BalancedTxBody txBodycontent balancedTxBody _ _
-    <- runTxBuild cEra consensusModeParams nid mScriptValidity inputsAndMaybeScriptWits readOnlyRefIns filteredTxinsc
-                  mReturnCollateral mTotCollateral txOuts changeAddr valuesWithScriptWits mLowBound
-                  mUpperBound certsAndMaybeScriptWits withdrawalsAndMaybeScriptWits
-                  requiredSigners txAuxScripts txMetadata mpparams mProp mOverrideWits outputOptions
+  BalancedTxBody txBodycontent balancedTxBody _ _ <-
+    runTxBuild
+      socketPath cEra consensusModeParams nid mScriptValidity inputsAndMaybeScriptWits readOnlyRefIns filteredTxinsc
+      mReturnCollateral mTotCollateral txOuts changeAddr valuesWithScriptWits mLowBound
+      mUpperBound certsAndMaybeScriptWits withdrawalsAndMaybeScriptWits
+      requiredSigners txAuxScripts txMetadata mpparams mProp mOverrideWits outputOptions
 
   let allReferenceInputs = getAllReferenceInputs
                              inputsAndMaybeScriptWits
@@ -608,7 +613,8 @@ runTxBuildRaw era
       getIsCardanoEraConstraint era $ createAndValidateTransactionBody txBodyContent
 
 runTxBuild
-  :: CardanoEra era
+  :: SocketPath
+  -> CardanoEra era
   -> AnyConsensusModeParams
   -> NetworkId
   -> Maybe ScriptValidity
@@ -645,11 +651,12 @@ runTxBuild
   -> Maybe Word
   -> TxBuildOutputOptions
   -> ExceptT ShelleyTxCmdError IO (BalancedTxBody era)
-runTxBuild era (AnyConsensusModeParams cModeParams) networkId mScriptValidity
-           inputsAndMaybeScriptWits readOnlyRefIns txinsc mReturnCollateral mTotCollateral txouts
-           (TxOutChangeAddress changeAddr) valuesWithScriptWits mLowerBound mUpperBound
-           certsAndMaybeScriptWits withdrawals reqSigners txAuxScripts txMetadata mpparams
-           mUpdatePropF mOverrideWits outputOptions = do
+runTxBuild
+    (SocketPath sockPath) era (AnyConsensusModeParams cModeParams) networkId mScriptValidity
+    inputsAndMaybeScriptWits readOnlyRefIns txinsc mReturnCollateral mTotCollateral txouts
+    (TxOutChangeAddress changeAddr) valuesWithScriptWits mLowerBound mUpperBound
+    certsAndMaybeScriptWits withdrawals reqSigners txAuxScripts txMetadata mpparams
+    mUpdatePropF mOverrideWits outputOptions = do
 
   liftIO $ forM_ mpparams $ \_ ->
     printWarning "'--protocol-params-file' for 'transaction build' is deprecated"
@@ -686,8 +693,6 @@ runTxBuild era (AnyConsensusModeParams cModeParams) networkId mScriptValidity
       void $ pure (toEraInMode era CardanoMode)
         & onNothing (left (ShelleyTxCmdEraConsensusModeMismatchTxBalance outputOptions
                             (AnyConsensusMode CardanoMode) (AnyCardanoEra era)))
-
-      SocketPath sockPath <- lift readEnvSocketPath & onLeft (left . ShelleyTxCmdSocketEnvError)
 
       let allTxInputs = inputsThatRequireWitnessing ++ allReferenceInputs ++ txinsc
           localNodeConnInfo = LocalNodeConnectInfo
@@ -1112,12 +1117,14 @@ runTxSign txOrTxBody witSigningData mnw (TxFile outTxFile) = do
 
 
 runTxSubmit
-  :: AnyConsensusModeParams
+  :: Maybe SocketPath
+  -> AnyConsensusModeParams
   -> NetworkId
   -> FilePath
   -> ExceptT ShelleyTxCmdError IO ()
-runTxSubmit (AnyConsensusModeParams cModeParams) network txFilePath = do
-    SocketPath sockPath <- lift readEnvSocketPath & onLeft (left . ShelleyTxCmdSocketEnvError)
+runTxSubmit mNodeSocketPath (AnyConsensusModeParams cModeParams) network txFilePath = do
+    SocketPath sockPath <- maybe (lift readEnvSocketPath) (pure . Right) mNodeSocketPath
+      & onLeft (left . ShelleyTxCmdSocketEnvError)
 
     txFile <- liftIO $ fileOrPipe txFilePath
     InAnyCardanoEra era tx <- lift (readFileTx txFile) & onLeft (left . ShelleyTxCmdCddlError)
