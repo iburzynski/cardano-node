@@ -81,7 +81,7 @@ data ShelleyTxCmdError
   | ShelleyTxCmdTxFeatureMismatch !AnyCardanoEra !TxFeature
   | ShelleyTxCmdTxBodyError !TxBodyError
   | ShelleyTxCmdNotImplemented !Text
-  | ShelleyTxCmdWitnessEraMismatch !AnyCardanoEra !AnyCardanoEra !WitnessFile
+  | ShelleyTxCmdWitnessEraMismatch !AnyCardanoEra !AnyCardanoEra !(WitnessFile 'In)
   | ShelleyTxCmdPolicyIdsMissing ![PolicyId]
   | ShelleyTxCmdPolicyIdsExcess  ![PolicyId]
   | ShelleyTxCmdUnsupportedMode !AnyConsensusMode
@@ -322,13 +322,13 @@ runTxBuildCmd
   -> Maybe (Value, [ScriptWitnessFiles WitCtxMint])
   -> Maybe SlotNo -- ^ Validity lower bound
   -> Maybe SlotNo -- ^ Validity upper bound
-  -> [(CertificateFile, Maybe (ScriptWitnessFiles WitCtxStake))]
+  -> [(CertificateFile 'In, Maybe (ScriptWitnessFiles WitCtxStake))]
   -> [(StakeAddress, Lovelace, Maybe (ScriptWitnessFiles WitCtxStake))] -- ^ Withdrawals with potential script witness
   -> TxMetadataJsonSchema
   -> [ScriptFile]
   -> [MetadataFile]
   -> Maybe ProtocolParamsSourceSpec
-  -> Maybe UpdateProposalFile
+  -> Maybe (UpdateProposalFile 'In)
   -> TxBuildOutputOptions
   -> ExceptT ShelleyTxCmdError IO ()
 runTxBuildCmd
@@ -457,14 +457,14 @@ runTxBuildRawCmd
   -> Maybe SlotNo -- ^ Validity lower bound
   -> Maybe SlotNo -- ^ Validity upper bound
   -> Maybe Lovelace -- ^ Tx fee
-  -> [(CertificateFile, Maybe (ScriptWitnessFiles WitCtxStake))]
+  -> [(CertificateFile 'In, Maybe (ScriptWitnessFiles WitCtxStake))]
   -> [(StakeAddress, Lovelace, Maybe (ScriptWitnessFiles WitCtxStake))]
   -> TxMetadataJsonSchema
   -> [ScriptFile]
   -> [MetadataFile]
   -> Maybe ProtocolParamsSourceSpec
-  -> Maybe UpdateProposalFile
-  -> TxBodyFile
+  -> Maybe (UpdateProposalFile 'In)
+  -> TxBodyFile 'Out
   -> ExceptT ShelleyTxCmdError IO ()
 runTxBuildRawCmd
   (AnyCardanoEra cEra) mScriptValidity txins readOnlyRefIns txinsc mReturnColl
@@ -1038,7 +1038,7 @@ readValueScriptWitnesses era (v, sWitFiles) = do
 runTxSign :: InputTxBodyOrTxFile
           -> [WitnessSigningData]
           -> Maybe NetworkId
-          -> TxFile
+          -> TxFile 'Out
           -> ExceptT ShelleyTxCmdError IO ()
 runTxSign txOrTxBody witSigningData mnw (TxFile outTxFile) = do
   sks <-  mapM (firstExceptT ShelleyTxCmdReadWitnessSigningDataError . newExceptT . readWitnessSigningData) witSigningData
@@ -1113,7 +1113,7 @@ runTxSign txOrTxBody witSigningData mnw (TxFile outTxFile) = do
 runTxSubmit
   :: AnyConsensusModeParams
   -> NetworkId
-  -> FilePath
+  -> File 'In
   -> ExceptT ShelleyTxCmdError IO ()
 runTxSubmit (AnyConsensusModeParams cModeParams) network txFilePath = do
     SocketPath sockPath <- lift readEnvSocketPath & onLeft (left . ShelleyTxCmdSocketEnvError)
@@ -1122,7 +1122,7 @@ runTxSubmit (AnyConsensusModeParams cModeParams) network txFilePath = do
     InAnyCardanoEra era tx <- lift (readFileTx txFile) & onLeft (left . ShelleyTxCmdCddlError)
     let cMode = AnyConsensusMode $ consensusModeOnly cModeParams
     eraInMode <- hoistMaybe
-                   (ShelleyTxCmdEraConsensusModeMismatch (Just txFilePath) cMode (AnyCardanoEra era))
+                   (ShelleyTxCmdEraConsensusModeMismatch (Just (unFile txFilePath)) cMode (AnyCardanoEra era))
                    (toEraInMode era $ consensusModeOnly cModeParams)
     let txInMode = TxInMode tx eraInMode
         localNodeConnInfo = LocalNodeConnectInfo
@@ -1144,7 +1144,7 @@ runTxSubmit (AnyConsensusModeParams cModeParams) network txFilePath = do
 --
 
 runTxCalculateMinFee
-  :: TxBodyFile
+  :: TxBodyFile 'In
   -> Maybe NetworkId
   -> ProtocolParamsSourceSpec
   -> TxInCount
@@ -1342,12 +1342,12 @@ runTxView = \case
 --
 
 runTxCreateWitness
-  :: TxBodyFile
+  :: TxBodyFile 'In
   -> WitnessSigningData
   -> Maybe NetworkId
-  -> OutputFile
+  -> File 'Out
   -> ExceptT ShelleyTxCmdError IO ()
-runTxCreateWitness (TxBodyFile txbodyFilePath) witSignData mbNw (OutputFile oFile) = do
+runTxCreateWitness (TxBodyFile txbodyFilePath) witSignData mbNw oFile = do
   txbodyFile <- liftIO $ fileOrPipe txbodyFilePath
   unwitnessed <- firstExceptT ShelleyTxCmdCddlError . newExceptT
                    $ readFileTxBody txbodyFile
@@ -1395,11 +1395,11 @@ runTxCreateWitness (TxBodyFile txbodyFilePath) witSignData mbNw (OutputFile oFil
         $ writeFileTextEnvelope oFile Nothing witness
 
 runTxSignWitness
-  :: TxBodyFile
-  -> [WitnessFile]
-  -> OutputFile
+  :: TxBodyFile 'In
+  -> [WitnessFile 'In]
+  -> File 'Out
   -> ExceptT ShelleyTxCmdError IO ()
-runTxSignWitness (TxBodyFile txbodyFilePath) witnessFiles (OutputFile oFp) = do
+runTxSignWitness (TxBodyFile txbodyFilePath) witnessFiles oFp = do
     txbodyFile <- liftIO $ fileOrPipe txbodyFilePath
     unwitnessed <- firstExceptT ShelleyTxCmdCddlError . newExceptT
                      $ readFileTxBody txbodyFile
