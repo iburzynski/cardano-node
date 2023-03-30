@@ -21,6 +21,9 @@ let
     ## TODO:  globally rename all profileNix occurences to profileData
     inherit (workbench-runner) profileName profileNix backend;
 
+    # recover CHaP location from cardano's project
+    CHaP = project.pkg-set.config.inputMap."https://input-output-hk.github.io/cardano-haskell-packages";
+
     shellHook = { profileName, backend, profiled, workbenchDevMode, withMainnet }: ''
       while test $# -gt 0
       do shift; done       ## Flush argv[]
@@ -41,7 +44,9 @@ let
       ${optionalString
         workbenchDevMode
         ''
+      export WB_CARDANO_NODE_PLAN=${project.plan-nix.json}
       export WB_CARDANO_NODE_REPO_ROOT=$(git rev-parse --show-toplevel)
+      export WB_CHAP_PACKAGES=${CHaP}/foliage/packages.json
       export WB_EXTRA_FLAGS=
 
       function wb() {

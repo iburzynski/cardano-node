@@ -9,6 +9,41 @@ manifest() {
 local op=${1:-collect-from-checkout}; if test $# -ge 1; then shift; fi
 
 case "${op}" in
+    contributions-by-repository)
+      local usage="USAGE: wb manifest $0"
+
+      jq '
+      def pkg_id: ."pkg-name" + "-" + ."pkg-version";
+      def repo_hash: .url | split("?")[0];
+
+      def group_nicely:
+        group_by(.repository)
+        | map({
+          repository: .[0].repository,
+          contributions: group_by(.hash) | map({
+            commit: .[0].hash,
+            packages: map(.pkg_id)
+          })
+        })
+        ;
+
+      map({ key: pkg_id, value: repo_hash }) | from_entries as $package_origin
+
+      | [ input."install-plan"[]
+        | select(."pkg-src".repo.uri == "https://input-output-hk.github.io/cardano-haskell-packages")
+        | pkg_id
+        ]
+        | unique
+        | map(
+          $package_origin[.] as $source
+          | { pkg_id: .
+            , repository: $source | ltrimstr("github:") | split("/")[:2] | join("/")
+            , hash: $source | split("/")[2]
+            }
+          )
+        | group_nicely
+      ' $WB_CHAP_PACKAGES $WB_CARDANO_NODE_PLAN
+    ;;
     collect-from-checkout )
         local usage="USAGE: wb manifest $0 CARDANO-NODE-CHECKOUT"
         local dir=${1:-.}; if test $# -ge 1; then shift; fi
