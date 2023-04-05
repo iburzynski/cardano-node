@@ -127,6 +127,7 @@ import           Cardano.Ledger.BaseTypes (Globals (..), Nonce, (⭒))
 import qualified Cardano.Ledger.BaseTypes as Ledger
 import qualified Cardano.Ledger.BHeaderView as Ledger
 import           Cardano.Ledger.Binary (DecoderError, FromCBOR, mkVersion)
+import           Cardano.Ledger.Conway.Genesis (ConwayGenesis (..))
 import qualified Cardano.Ledger.Credential as Ledger
 import qualified Cardano.Ledger.Keys as Ledger
 import qualified Cardano.Ledger.Keys as SL
@@ -945,9 +946,6 @@ toLedgerStateEvents lr = (ledgerState, ledgerEvents)
     ledgerEvents = mapMaybe (toLedgerEvent
       . WrapLedgerEvent @(HFC.HardForkBlock (Consensus.CardanoEras Shelley.StandardCrypto)))
       $ lrEvents lr
-
--- TODO: Fix ConwayGenesis in Ledger
-type ConwayGenesis c = ShelleyAPI.GenDelegs c
 
 -- Usually only one constructor, but may have two when we are preparing for a HFC event.
 data GenesisConfig
