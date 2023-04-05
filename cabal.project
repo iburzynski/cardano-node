@@ -12,11 +12,10 @@ repository cardano-haskell-packages
 
 -- See CONTRIBUTING for information about these, including some Nix commands
 -- you need to run if you change them
-index-state: 2023-03-18T05:24:58Z
-
+index-state: 2023-03-29T00:00:00Z
 index-state:
-  , hackage.haskell.org 2023-03-18T05:24:58Z
-  , cardano-haskell-packages 2023-03-22T09:20:07Z
+  , hackage.haskell.org 2023-03-29T00:00:00Z
+  , cardano-haskell-packages 2023-03-29T00:00:00Z
 
 packages:
     cardano-api
@@ -104,6 +103,7 @@ allow-newer:
   , ekg:base
   , ekg:time
   , libsystemd-journal:base
+  , libsystemd-journal:unix-bytestring
 
 -- IMPORTANT
 -- Do NOT add more source-repository-package stanzas here unless they are strictly
@@ -130,14 +130,14 @@ source-repository-package
     ouroboros-consensus-cardano-tools
     ouroboros-consensus-diffusion
 
-source-repository-package
-  type: git
-  location: https://github.com/input-output-hk/fs-sim
-  tag: 13a1cfa5a82740c5723fb0a279b3f32f98c8b494
-  --sha256: 1q783gsb0hh4i0slvfwp5nppi8h425pkvj0kqr2lpl06y7y2gq41
-  subdir:
-    fs-api
-    fs-sim
+-- source-repository-package
+--   type: git
+--   location: https://github.com/input-output-hk/fs-sim
+--   tag: 13a1cfa5a82740c5723fb0a279b3f32f98c8b494
+--   --sha256: 1q783gsb0hh4i0slvfwp5nppi8h425pkvj0kqr2lpl06y7y2gq41
+--   subdir:
+--     fs-api
+--     fs-sim
 
 -- Waiting for proper Windows ghc-9.2 release.
 source-repository-package
