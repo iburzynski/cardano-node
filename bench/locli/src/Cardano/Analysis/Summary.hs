@@ -30,6 +30,9 @@ data SummaryError
   | SECDFError                   CDFError
   deriving Show
 
+profilingCentiles :: [Centile]
+profilingCentiles = nEquicentiles 5
+
 summariseMultiSummary ::
      UTCTime
   -> [Centile]
@@ -75,6 +78,14 @@ summariseMultiSummary sumAnalysisTime centiles xs@(headline:xss) = do
                                  (sumWorkload <$> xss)
                             & maybe (Right $ sumWorkload headline)
                               (Left .SEIncoherentRunWorkloads .(sumWorkload headline:).(:[]))
+  sumProfilingData       <- xs <&> sumProfilingData
+                            & catMaybes
+                            & \case
+                                [] -> pure Nothing
+                                pds -> Just <$> (collapseProfilingDataCDF
+                                                 profilingCentiles pds
+                                                 & mapLeft SECDFError)
+
   pure $ Summary
     { ..
     }
@@ -167,6 +178,11 @@ computeSummary sumAnalysisTime
       &  concat
       &  foldr' (\k m -> Map.insertWith (+) k 1 m) Map.empty
       &  Map.toList
+
+   profileEntries = Map.elems rlHostLogs <&> hlProfile
+   sumProfilingData = if all null profileEntries then Nothing
+                      else Just $ profilingDataCDF profilingCentiles $
+                           profileEntries <&> mkProfilingData
 
 deriving newtype instance (Num (I Int))
 
