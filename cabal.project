@@ -113,8 +113,8 @@ allow-newer:
 source-repository-package
   type: git
   location: https://github.com/input-output-hk/ouroboros-network
-  tag: 7f6afd7ba652bd20d5aaf31a9450dddda7e2f0bd
-  --sha256: 0wlvgiiyqp14xd7d49h9709dg2dv7wk1b44kbdy596mg8g3v93nw
+  tag: 2a8507bf255eb2c0e5afd22db9e742e288ed9c74
+  --sha256: 0sdppwhr6xm5d3z4v693vhpw8rf6hyf3d4s1p5a137vcy6sri10q
   subdir:
     -- monoidal-synchronisation
     -- network-mux
@@ -149,8 +149,8 @@ source-repository-package
 source-repository-package
   type: git
   location: https://github.com/input-output-hk/cardano-ledger
-  tag: 302e46f4d83e5ad8dafec68130ea5b3c07942f52
-  --sha256: 0dv1di7sxr4lvha0hh2v8gsjrmkd8fps865a3wjvxqshi6w00cmq
+  tag: 64fa6d7785c3b88d5809614e9c3eb21c0a1bcc0e
+  --sha256: 1v3g27sfhqxwq9kigd5r8n5c8yn8h9aj16i4yws7a6ls8g3p8f03
   subdir:
     eras/alonzo/impl
     eras/alonzo/test-suite
