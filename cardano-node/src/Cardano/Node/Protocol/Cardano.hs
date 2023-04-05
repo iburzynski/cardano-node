@@ -39,7 +39,6 @@ import           Cardano.Tracing.OrphanInstances.Byron ()
 import           Cardano.Tracing.OrphanInstances.Shelley ()
 
 import           Cardano.Ledger.BaseTypes (natVersion)
-import           Cardano.Ledger.Conway.Genesis (ConwayGenesis (cgGenDelegs))
 import           Cardano.Ledger.Shelley.Translation (emptyFromByronTranslationContext)
 
 import qualified Cardano.Node.Protocol.Alonzo as Alonzo
@@ -318,7 +317,7 @@ mkSomeConsensusProtocolCardano NodeByronProtocolConfiguration {
         }
         -- Alonzo to Conway hard fork parameters
         Consensus.ProtocolTransitionParamsShelleyBased {
-          transitionTranslationContext = cgGenDelegs conwayGenesis,
+          transitionTranslationContext = conwayGenesis,
           transitionTrigger =
              case npcTestConwayHardForkAtEpoch of
                 Nothing -> Consensus.TriggerHardForkAtVersion
