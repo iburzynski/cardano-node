@@ -15,7 +15,7 @@ repository cardano-haskell-packages
 index-state: 2023-03-29T00:00:00Z
 index-state:
   , hackage.haskell.org 2023-03-29T00:00:00Z
-  , cardano-haskell-packages 2023-03-29T00:00:00Z
+  , cardano-haskell-packages 2023-04-04T14:44:11Z
 
 packages:
     cardano-api
@@ -116,19 +116,19 @@ source-repository-package
   tag: 2a8507bf255eb2c0e5afd22db9e742e288ed9c74
   --sha256: 0sdppwhr6xm5d3z4v693vhpw8rf6hyf3d4s1p5a137vcy6sri10q
   subdir:
-    -- monoidal-synchronisation
-    -- network-mux
     ouroboros-consensus
     ouroboros-consensus-byron
     ouroboros-consensus-cardano
     ouroboros-consensus-protocol
     ouroboros-consensus-shelley
+    ouroboros-consensus-cardano-tools
+    -- monoidal-synchronisation
+    -- network-mux
     -- ouroboros-network
     -- ouroboros-network-framework
     -- ouroboros-network-testing
     -- ouroboros-network-protocols
-    ouroboros-consensus-cardano-tools
-    ouroboros-consensus-diffusion
+    -- ouroboros-consensus-diffusion
 
 -- source-repository-package
 --   type: git
@@ -181,29 +181,3 @@ source-repository-package
     libs/small-steps
     libs/small-steps-test
     libs/vector-map
-
-
-source-repository-package
-  type: git
-  location: https://github.com/input-output-hk/cardano-base
-  tag: f954aec4fbe11ba96729ddcc5e22c13ab6320b5d
-  --sha256: 0n3w1k30ivdppyidyws9riy1qyx4881gxw8v1v34sixbraj0ng5k
-  subdir:
-    base-deriving-via
-    cardano-binary
-    cardano-crypto-class
-    cardano-crypto-praos
-    cardano-crypto-tests
-    cardano-strict-containers
-    heapwords
-    measures
-    orphans-deriving-via
-
-
-source-repository-package
-  type: git
-  location: https://github.com/input-output-hk/cardano-base
-  tag: 70a7f0230aaeb23f97069168382383802b5ecfa3
-  --sha256: 1zg023b2sqkpbzd3wd509dvn1yxv8145lj2hca4mm6m509lmki3g
-  subdir:
-    cardano-slotting
