@@ -264,6 +264,7 @@ module Cardano.Api (
     CertificatesSupportedInEra(..),
     UpdateProposalSupportedInEra(..),
     TxTotalAndReturnCollateralSupportedInEra(..),
+    ProtocolUTxOCostPerByteSupportedInEra(..),
 
     -- ** Feature availability functions
     collateralSupportedInEra,
@@ -280,6 +281,8 @@ module Cardano.Api (
     updateProposalSupportedInEra,
     scriptDataSupportedInEra,
     totalAndReturnCollateralSupportedInEra,
+    protocolUTxOCostPerByteSupportedInEra,
+
 
     -- ** Fee calculation
     LedgerEpochInfo(..),
