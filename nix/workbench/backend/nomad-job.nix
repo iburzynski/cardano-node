@@ -193,7 +193,7 @@ let
     # placed on the same host.
     # https://developer.hashicorp.com/nomad/docs/job-specification/group
     group = let
-      valueF = (taskName: serviceName: portName: nodeSpec: (groupDefaults // {
+      valueF = (taskName: serviceName: portName: portNum: nodeSpec: (groupDefaults // {
 
         # Specifies the number of instances that should be running under for
         # this group. This value must be non-negative. This defaults to the min
@@ -249,10 +249,10 @@ let
               {name = "tracer"; value = {};}
             ]
             ++
-            (lib.mapAttrsToList
-              (_: nodeSpec: {
+            [
+              {
                 # All names of the form node#, without the "-", instead of node-#
-                name = "node" + (toString nodeSpec.i);
+                name = portName;
                 value =
                   # The "podman" driver accepts "Mapped Ports", but not the "exec" driver
                   # https://developer.hashicorp.com/nomad/docs/job-specification/network#mapped-ports
@@ -260,15 +260,14 @@ let
                   # https://developer.hashicorp.com/nomad/docs/job-specification/network#bridge-mode
                   if execTaskDriver
                   then {
-                    to     = ''${toString nodeSpec.port}'';
-                    static = ''${toString nodeSpec.port}'';
+                    to     = ''${toString portNum}'';
+                    static = ''${toString portNum}'';
                   }
                   else {
-                    to     = ''${toString nodeSpec.port}'';
+                    to     = ''${toString portNum}'';
                   };
-              })
-              (profileNix.node-specs.value)
-            )
+              }
+            ]
           );
         };
 
@@ -642,6 +641,7 @@ let
               "tracer"
               "perf-tracer"
               "tracer"
+              0
               {};
           }
         ]
@@ -657,9 +657,10 @@ let
             */
             name = nodeSpec.name;
             value = valueF
-              nodeSpec.name
-              ("perf-node-" + (toString nodeSpec.i))
-              ("node" + (toString nodeSpec.i))
+              nodeSpec.name                          # taskName
+              ("perf-node-" + (toString nodeSpec.i)) # serviceName
+              ("node" + (toString nodeSpec.i))       # portName
+              nodeSpec.port                          # portNum
               nodeSpec;
           })
           (profileNix.node-specs.value)
