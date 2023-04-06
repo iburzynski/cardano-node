@@ -63,7 +63,7 @@ genPrice = do
     Just p -> pure p
 
 genLanguage :: Gen Alonzo.Language
-genLanguage = return Alonzo.PlutusV1
+genLanguage = Gen.element [Alonzo.PlutusV1, Alonzo.PlutusV2]
 
 genPrices :: Gen Alonzo.Prices
 genPrices = do
@@ -84,9 +84,8 @@ genExUnits = do
     , Alonzo.exUnitsSteps = exUnitsSteps'
     }
 
-genCostModels :: Gen Alonzo.CostModels
-genCostModels = do
-  lang <- genLanguage
+genCostModels :: Alonzo.Language -> Gen Alonzo.CostModels
+genCostModels lang = do
   CostModel cModel <- genCostModel lang
   case Alonzo.mkCostModel lang cModel of
     Left err -> error $ "genCostModels: " <> show err
@@ -100,8 +99,9 @@ genCostModels = do
 genAlonzoGenesis :: Gen Alonzo.AlonzoGenesis
 genAlonzoGenesis = do
   coinsPerUTxOWord <- genCoin (Range.linear 0 5)
+  lang <- genLanguage
   -- TODO: Babbage: Figure out how to deal with the asymmetric cost model JSON
-  _costmdls' <- genCostModels
+  _costmdls' <- genCostModels lang
   prices' <- genPrices
   maxTxExUnits' <- genExUnits
   maxBlockExUnits' <- genExUnits

@@ -779,7 +779,7 @@ fromAlonzoPrices Alonzo.Prices{Alonzo.prSteps, Alonzo.prMem} =
 -- Script cost models
 --
 
-newtype CostModel = CostModel (Map Text Integer)
+newtype CostModel = CostModel { unCostModel :: Map Text Integer }
   deriving (Eq, Show)
   deriving newtype (ToJSON, FromJSON)
   deriving newtype (ToCBOR, FromCBOR)
