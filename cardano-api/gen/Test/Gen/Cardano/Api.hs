@@ -86,8 +86,8 @@ genExUnits = do
 
 genCostModels :: Gen Alonzo.CostModels
 genCostModels = do
-  CostModel cModel <- genCostModel
   lang <- genLanguage
+  CostModel cModel <- genCostModel lang
   case Alonzo.mkCostModel lang cModel of
     Left err -> error $ "genCostModels: " <> show err
     Right alonzoCostModel ->

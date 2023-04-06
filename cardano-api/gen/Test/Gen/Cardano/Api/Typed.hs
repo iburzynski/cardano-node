@@ -914,11 +914,15 @@ genUpdateProposal era =
         )
     <*> genEpochNo
 
-genCostModel :: Gen CostModel
-genCostModel = do
-  let costModelParams = Alonzo.getCostModelParams Plutus.testingCostModelV1
-  eCostModel <- Alonzo.mkCostModel <$> genPlutusLanguage
-                                   <*> mapM (const $ Gen.integral (Range.linear 0 5000)) costModelParams
+genCostModel :: Language -> Gen CostModel
+genCostModel lang = do
+  let costModelParams = case lang of
+        PlutusV1 -> Alonzo.getCostModelParams Plutus.testingCostModelV1
+        PlutusV2 -> Alonzo.getCostModelParams Plutus.testingCostModelV2
+
+  eCostModel <- Alonzo.mkCostModel lang
+    <$> mapM (const $ Gen.integral (Range.linear 0 5000)) costModelParams
+
   case eCostModel of
     Left err -> error $ "genCostModel: " <> show err
     Right cModel -> return . CostModel $ Alonzo.getCostModelParams cModel
@@ -928,10 +932,11 @@ genPlutusLanguage = Gen.element [PlutusV1, PlutusV2]
 
 genCostModels :: CardanoEra era -> Gen (Map AnyPlutusScriptVersion CostModel)
 genCostModels era
-  | anyCardanoEra era >= anyCardanoEra AlonzoEra =
+  | anyCardanoEra era >= anyCardanoEra AlonzoEra = do
+      lang <- genPlutusLanguage
       Gen.map
         (Range.linear 0 (length plutusScriptVersions))
-        ((,) <$> Gen.element plutusScriptVersions <*> genCostModel)
+        ((,) <$> Gen.element plutusScriptVersions <*> genCostModel lang)
   | otherwise = pure Map.empty
   where
     plutusScriptVersions :: [AnyPlutusScriptVersion]
