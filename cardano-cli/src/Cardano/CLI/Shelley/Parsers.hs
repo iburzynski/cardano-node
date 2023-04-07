@@ -826,8 +826,11 @@ pTransaction =
     ParamsFromGenesis <$>
       pGenesisFile
         "[TESTING] The genesis file to take initial protocol parameters from.  For test clusters only, since the parameters are going to be obsolete for production clusters."
-    <|>
-    ParamsFromFile <$> pProtocolParamsFile
+    <|> ParamsFromFile <$> pProtocolParamsFile
+    <|> Opt.flag' ParamsFromNode
+          (  Opt.long "protocol-params-node"
+          <> Opt.help "Retrieve protocol parameters using local node."
+          )
 
   pTxHashScriptData :: Parser TransactionCmd
   pTxHashScriptData = TxHashScriptData <$>
