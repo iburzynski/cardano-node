@@ -1,4 +1,5 @@
 {-# LANGUAGE GADTs #-}
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
@@ -41,6 +42,7 @@ module Test.Gen.Cardano.Api.Typed
 
   , genAssetName
   , genAssetId
+  , genCardanoKeyWitness
   , genEpochNo
   , genExecutionUnitPrices
   , genExecutionUnits
@@ -760,6 +762,14 @@ genShelleyWitnessSigningKey =
              , WitnessGenesisDelegateKey <$>  genSigningKey AsGenesisDelegateKey
              , WitnessGenesisUTxOKey <$>  genSigningKey AsGenesisUTxOKey
              ]
+
+genCardanoKeyWitness
+  :: CardanoEra era
+  -> Gen (KeyWitness era)
+genCardanoKeyWitness era =
+  case cardanoEraStyle era of
+    LegacyByronEra    -> genByronKeyWitness
+    ShelleyBasedEra _ -> genShelleyWitness era
 
 genSeed :: Int -> Gen Crypto.Seed
 genSeed n = Crypto.mkSeedFromBytes <$> Gen.bytes (Range.singleton n)
