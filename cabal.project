@@ -145,3 +145,13 @@ source-repository-package
    location: https://github.com/input-output-hk/snap-core
    tag: b87b2ffa52bf58867a7239ebe74f61b1a2c762d2
    --sha256: 0ndm57z5zpxd5n8s47kh8k1jfqf3b78qv7gkgrx9wwaajs9bf196
+
+
+source-repository-package
+  type: git
+  location: https://github.com/input-output-hk/cardano-ledger
+  tag: e6ea9ab4fd4d5b28ac09baac7c1b49dc7c0cc389
+  --sha256: 1w7321s8yb8rgv802a6yy49l6bqnpgf8l16mx38afwvpgn1xp7wl
+  subdir:
+    eras/shelley/impl
+
