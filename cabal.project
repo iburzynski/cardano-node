@@ -113,8 +113,8 @@ allow-newer:
 source-repository-package
   type: git
   location: https://github.com/input-output-hk/ouroboros-network
-  tag: 74f7701a939f66e7d458c4240bf046f51880886e
-  --sha256: 0yazbq75q1pcdw6sy17v2s5gpsw0lig7wdssnsxq267jhh50lcq2
+  tag: 81f9d1e4f5b1d3756508414d1c5ed96088773276
+  --sha256: 1lb0f07bix2x38a7zkj8bfjplbvy1rbfnj7b6aip6i6mp5ndnm35
   subdir:
     ouroboros-consensus
     ouroboros-consensus-byron
