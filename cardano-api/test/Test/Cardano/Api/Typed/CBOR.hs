@@ -25,8 +25,8 @@ import           Test.Tasty.Hedgehog (testPropertyNamed)
 -- TODO: Need to add PaymentExtendedKey roundtrip tests however
 -- we can't derive an Eq instance for Crypto.HD.XPrv
 
-test_roundtrip_txbody_CBOR :: [TestTree]
-test_roundtrip_txbody_CBOR =
+test_roundtrip_txbody_Cddl :: [TestTree]
+test_roundtrip_txbody_Cddl =
   [ testPropertyNamed (show era) (fromString (show era)) $
     roundtrip_CDDL_Tx era (makeSignedTransaction [] <$> genTxBody era)
   | AnyCardanoEra era <- [minBound..(AnyCardanoEra BabbageEra)]
@@ -227,7 +227,7 @@ tests = testGroup "Test.Cardano.Api.Typed.CBOR"
   , testPropertyNamed "roundtrip UpdateProposal CBOR"                        "roundtrip UpdateProposal CBOR"                        prop_roundtrip_UpdateProposal_CBOR
   , testPropertyNamed "roundtrip ScriptData CBOR"                            "roundtrip ScriptData CBOR"                            prop_roundtrip_ScriptData_CBOR
   , testPropertyNamed "roundtrip tx CBOR"                                    "roundtrip tx CBOR"                                    prop_roundtrip_tx_CBOR
-  , testGroup "roundtrip txbody CBOR"     test_roundtrip_txbody_CBOR
+  , testGroup "roundtrip txbody Cddl"     test_roundtrip_txbody_Cddl
   , testGroup "roundtrip Tx Cddl"         test_roundtrip_Tx_Cddl
   , testGroup "roundtrip TxWitness Cddl"  test_roundtrip_TxWitness_Cddl
   ]
