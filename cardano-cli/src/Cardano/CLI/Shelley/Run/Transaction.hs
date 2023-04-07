@@ -20,14 +20,16 @@ module Cardano.CLI.Shelley.Run.Transaction
   , ProtocolParamsError(..)
   , renderProtocolParamsError
   , readProtocolParametersSourceSpec
+  , readProtocolParametersSourceSpec'
   ) where
-import Cardano.CLI.Shelley.Run.Query (executeQueryProtocolParameters)
 import           Control.Monad (forM, forM_, void)
+import           Control.Monad.Except (throwError)
 import           Control.Monad.IO.Class (MonadIO (..))
 import           Control.Monad.Trans (MonadTrans (..))
 import           Control.Monad.Trans.Except (ExceptT)
-import           Control.Monad.Trans.Except.Extra (firstExceptT, hoistEither, hoistMaybe, left,
-                   newExceptT, onLeft, onNothing, handleIOExceptT)
+import           Control.Monad.Trans.Except.Extra (firstExceptT, handleIOExceptT, hoistEither,
+                   hoistMaybe, left, newExceptT, onLeft, onNothing)
+import qualified Data.Aeson as Aeson
 import           Data.Aeson.Encode.Pretty (encodePretty)
 import           Data.Bifunctor (Bifunctor (..))
 import qualified Data.ByteString.Char8 as BS
@@ -56,14 +58,14 @@ import           Cardano.CLI.Run.Friendly (friendlyTxBS, friendlyTxBodyBS)
 import           Cardano.CLI.Shelley.Output
 import           Cardano.CLI.Shelley.Parsers
 import           Cardano.CLI.Shelley.Run.Genesis
+import           Cardano.CLI.Shelley.Run.Query (ShelleyQueryCmdError,
+                   executeQueryProtocolParameters, renderShelleyQueryCmdError)
 import           Cardano.CLI.Shelley.Run.Read
 import           Cardano.CLI.Shelley.Run.Validate
 import           Cardano.CLI.Types
 
 import           Ouroboros.Consensus.Cardano.Block (EraMismatch (..))
 import qualified Ouroboros.Network.Protocol.LocalTxSubmission.Client as Net.Tx
-import qualified Data.Aeson as Aeson
-import Cardano.CLI.Shelley.Run.Query (ShelleyQueryCmdError)
 
 {- HLINT ignore "Use let" -}
 
@@ -372,7 +374,7 @@ runTxBuildCmd
                      mapM (readFileScriptInAnyLang . unScriptFile) scriptFiles
   txAuxScripts <- hoistEither $ first ShelleyTxCmdAuxScriptsValidationError $ validateTxAuxScripts cEra scripts
   mpparams <- forM mPparams $ \ppFp ->
-    firstExceptT ShelleyTxCmdProtocolParamsError (readProtocolParametersSourceSpec ppFp)
+    firstExceptT ShelleyTxCmdProtocolParamsError (readProtocolParametersSourceSpec' consensusModeParams nid ppFp)
 
   mProp <- forM mUpProp $ \(UpdateProposalFile upFp) ->
     firstExceptT ShelleyTxCmdReadTextViewFileError (newExceptT $ readFileTextEnvelope AsUpdateProposal upFp)
@@ -1465,13 +1467,14 @@ onlyInShelleyBasedEras notImplMsg (InAnyCardanoEra era x) =
 
 
 
--- FIXME: move to a better place
+-- FIXME: move to a better place?
 -- Protocol Parameters
 data ProtocolParamsError
   = ProtocolParamsErrorFile (FileError ())
   | ProtocolParamsErrorJSON !FilePath !Text
   | ProtocolParamsErrorGenesis !ShelleyGenesisCmdError
   | ProtocolParamsErrorQuery !ShelleyQueryCmdError
+  | ProtocolParamsErrorNotImplemented -- FIXME remove once #5052 is completed
 
 renderProtocolParamsError :: ProtocolParamsError -> Text
 renderProtocolParamsError (ProtocolParamsErrorFile fileErr) =
@@ -1480,23 +1483,38 @@ renderProtocolParamsError (ProtocolParamsErrorJSON fp jsonErr) =
   "Error while decoding the protocol parameters at: " <> Text.pack fp <> " Error: " <> jsonErr
 renderProtocolParamsError (ProtocolParamsErrorGenesis err) =
   Text.pack $ displayError  err
-renderProtocolParamsError (ProtocolParamsErrorQuery _err) =
-  undefined
+renderProtocolParamsError (ProtocolParamsErrorQuery err) =
+  renderShelleyQueryCmdError err
+renderProtocolParamsError ProtocolParamsErrorNotImplemented =
+  "Not implemented feature" -- FIXME remove once #5052 is completed
 
 readProtocolParametersSourceSpec :: ProtocolParamsSourceSpec
                                  -> ExceptT ProtocolParamsError IO ProtocolParameters
 readProtocolParametersSourceSpec (ParamsFromGenesis (GenesisFile f)) =
   fromShelleyPParams . sgProtocolParams
     <$> firstExceptT ProtocolParamsErrorGenesis (readShelleyGenesisWithDefault f id)
-readProtocolParametersSourceSpec (ParamsFromFile f) = readProtocolParameters f
-readProtocolParametersSourceSpec ParamsFromNode = firstExceptT (ProtocolParamsErrorQuery) $
-  executeQueryProtocolParameters undefined undefined
+readProtocolParametersSourceSpec (ParamsFromFile f) = readProtocolParametersFile f
+readProtocolParametersSourceSpec ParamsFromNode =
+  -- FIXME unify with readProtocolParametersSourceSpec' and remove this case
+  throwError ProtocolParamsErrorNotImplemented
+
+readProtocolParametersSourceSpec' :: AnyConsensusModeParams
+                                  -> NetworkId
+                                  -> ProtocolParamsSourceSpec
+                                  -> ExceptT ProtocolParamsError IO ProtocolParameters
+readProtocolParametersSourceSpec' _ _ (ParamsFromGenesis (GenesisFile f)) =
+  fromShelleyPParams . sgProtocolParams
+    <$> firstExceptT ProtocolParamsErrorGenesis (readShelleyGenesisWithDefault f id)
+readProtocolParametersSourceSpec' _ _ (ParamsFromFile f) = readProtocolParametersFile f
+readProtocolParametersSourceSpec' consensusModeParams networkId ParamsFromNode = firstExceptT ProtocolParamsErrorQuery $
+  executeQueryProtocolParameters consensusModeParams networkId
+
 
 --TODO: eliminate this and get only the necessary params, and get them in a more
 -- helpful way rather than requiring them as a local file.
-readProtocolParameters :: ProtocolParamsFile
-                       -> ExceptT ProtocolParamsError IO ProtocolParameters
-readProtocolParameters (ProtocolParamsFile fpath) = do
+readProtocolParametersFile :: ProtocolParamsFile
+                           -> ExceptT ProtocolParamsError IO ProtocolParameters
+readProtocolParametersFile (ProtocolParamsFile fpath) = do
   pparams <- handleIOExceptT (ProtocolParamsErrorFile . FileIOError fpath) $ LBS.readFile fpath
   firstExceptT (ProtocolParamsErrorJSON fpath . Text.pack) . hoistEither $
     Aeson.eitherDecode' pparams
