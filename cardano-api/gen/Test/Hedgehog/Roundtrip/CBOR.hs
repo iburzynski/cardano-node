@@ -6,6 +6,7 @@
 module Test.Hedgehog.Roundtrip.CBOR
   ( roundtrip_CBOR
   , roundtrip_CDDL_Tx
+  , trippingCbor
   ) where
 
 import           Cardano.Api
@@ -21,7 +22,11 @@ import qualified Hedgehog.Extras.Test.Base as H
 {- HLINT ignore "Use camelCase" -}
 
 roundtrip_CBOR
-  :: forall a. (SerialiseAsCBOR a, Eq a, Show a, HasCallStack)
+  :: forall a. ()
+  => SerialiseAsCBOR a
+  => Eq a
+  => Show a
+  => HasCallStack
   => AsType a
   -> Gen a
   -> Property
@@ -31,6 +36,18 @@ roundtrip_CBOR typeProxy gen =
     val <- H.forAll gen
     H.tripping val serialiseToCBOR (deserialiseFromCBOR typeProxy)
 
+-- | Assert that CBOR serialisation and deserialisation roundtrips.
+trippingCbor :: ()
+  => HasCallStack
+  => H.MonadTest m
+  => Show a
+  => Eq a
+  => SerialiseAsCBOR a
+  => AsType a
+  -> a
+  -> m ()
+trippingCbor typeProxy v = GHC.withFrozenCallStack $
+  H.tripping v serialiseToCBOR (deserialiseFromCBOR typeProxy)
 
 roundtrip_CDDL_Tx
   :: (IsCardanoEra era, HasCallStack)
