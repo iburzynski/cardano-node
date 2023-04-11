@@ -814,6 +814,7 @@ pTransaction =
       <*> pTxOutCount
       <*> pTxShelleyWitnessCount
       <*> pTxByronWitnessCount
+      <*> optional pOutputFile
 
   pTransactionCalculateMinReqUTxO :: Parser TransactionCmd
   pTransactionCalculateMinReqUTxO = TxCalculateMinRequiredUTxO
