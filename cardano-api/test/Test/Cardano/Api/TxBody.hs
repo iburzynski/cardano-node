@@ -377,7 +377,7 @@ buildMintValue = \case
 
 
 tests :: TestTree
-tests = testGroup "Test.Cardano.Api.TxBody" $
+tests = testGroup "Test.Cardano.Api.TxBody"
   [ testPropertyNamed "round trip txbody make get"      "round trip txbody make get"      prop_roundtrip_TxBody_make_get
   , testPropertyNamed "round trip txbody make get make" "round trip txbody make get make" prop_roundtrip_TxBody_make_get_make
   ]
